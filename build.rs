@@ -39,6 +39,17 @@ fn main() {
 
     bindgen::Builder::default()
         .header(out_path.join("openh264.h").as_path().to_string_lossy())
+        .impl_debug(true)
+        .impl_partialeq(true)
+        .derive_copy(true)
+        .derive_debug(true)
+        .derive_default(true)
+        .derive_hash(true)
+        .derive_partialeq(true)
+        .derive_eq(true)
+        .prepend_enum_name(true)
+        .default_enum_style(bindgen::EnumVariation::Rust)
+        
         .generate()
         .expect("Unable to generate bindings")
         .write_to_file(out_path.join("openh264.rs").as_path())
