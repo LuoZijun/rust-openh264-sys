@@ -9,7 +9,7 @@ use std::io::{ Write, };
 
 
 fn main() {
-    let current_dir = env::current_dir().unwrap();
+    let current_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
     let out_path = path::PathBuf::from(env::var("OUT_DIR").unwrap());
 
     let openh264_source_dir = path::Path::new(&current_dir).join("openh264");
@@ -19,7 +19,7 @@ fn main() {
         .current_dir(&openh264_source_dir)
         .status()
         .expect("failed to execute make process");
-
+    
     let openh264_header = format!("
 #include <stdbool.h>
 #include \"{}/codec/api/svc/codec_def.h\"
@@ -36,7 +36,6 @@ fn main() {
         .unwrap();
     file.write_all(&openh264_header.as_bytes()).unwrap();
 
-
     bindgen::Builder::default()
         .header(out_path.join("openh264.h").as_path().to_string_lossy())
         .impl_debug(true)
@@ -49,12 +48,14 @@ fn main() {
         .derive_eq(true)
         .prepend_enum_name(true)
         .default_enum_style(bindgen::EnumVariation::Rust)
-        
         .generate()
         .expect("Unable to generate bindings")
         .write_to_file(out_path.join("openh264.rs").as_path())
         .expect("Couldn't write bindings!");;
 
-    println!("cargo:rustc-link-search=static={}", &openh264_source_dir.clone().as_path().to_string_lossy());
-    pkg_config::Config::new().statik(true).probe("openh264").unwrap();
+    println!("cargo:rustc-link-lib=c++");
+    println!("cargo:rustc-link-search=static={}", &openh264_source_dir.display());
+    println!("cargo:rustc-flags=-l dylib=stdc++");
+    println!("cargo:rustc-flags=-l static=openh264 -L {}", &openh264_source_dir.display());
+    println!("cargo:rerun-if-changed={}", &openh264_source_dir.display());
 }
